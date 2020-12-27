@@ -20,13 +20,15 @@ sudo apt-get install libatlas-base-dev
 cd ../src
 #Configure with mathlib set to the linear algebra library used:
 ./configure --mathlib=ATLAS --shared --use-cuda=no
-make -j 4
+make -j clean depend; make -j 4
 #export path to kaldi root
 cd ..
-echo "export KALDI_ROOT=$(pwd)" > $HOME/.bashrc
+echo "export KALDI_ROOT=$(pwd)" >> $HOME/.bashrc
+source ~/.bashrc
+cd ..
 #Install vosk-sys
 git clone https://github.com/wzhd/vosk-sys.git
-cd vosk_sys
+cd vosk-sys
 git submodule init
 git submodule update
 cargo build
