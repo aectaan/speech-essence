@@ -1,65 +1,29 @@
-use argh::FromArgs;
 use riff_wave::WaveReader;
+use std::ffi::OsStr;
 use std::fs::File;
 use std::io::BufReader;
-use vosk::{Model, Recognizer};
+use std::path::PathBuf;
+use structopt::StructOpt;
+use vosk::{Model, Recognizer, SpeakerModel, SpeakerRecognizer};
 
-#[derive(FromArgs)]
-/// Receive audio and recognize speeches
-struct Input {
-    /// path to the model
-    #[argh(option, short = 'f', default = "String::from(\"file\")")]
-    file: String,
-    /// path to the model
-    #[argh(option, short = 'm', default = "String::from(\"model\")")]
-    model: String,
-}
-
-fn main() {
-    let inputs: Input = argh::from_env();
-    let file = inputs.file;
-    let model_path = inputs.model;
-
-    let file = match File::open(&file) {
-        Ok(f) => f,
-        Err(e) => {
-            println!("Could not open {}: {:?}", file, e);
-            return;
-        }
-    };
-    let reader = BufReader::new(file);
-    let mut wave_reader = WaveReader::new(reader).expect("wave_reader");
-    let fmt = &wave_reader.pcm_format;
-    // if fmt.num_channels != 1 || fmt.bits_per_sample != 16 {
-    //     println!("Audio file must be WAV format mono PCM.");
-    //     return;
-    // }
-    let mut buf = [0; 1024];
-    let model = Model::new(model_path).unwrap();
-    let _recognizer = Recognizer::new(&model, fmt.sample_rate as f32);
-    let mut recognizer = Recognizer::new(&model, fmt.sample_rate as f32);
-    let mut last_part = String::new();
-    loop {
-        let n = read_sample(&mut wave_reader, &mut buf);
-        if n == 0 {
-            let result = recognizer.final_result();
-            println!("Final result: {:?}", result);
-            break;
-        } else {
-            let completed = recognizer.accept_waveform(&buf[..n]);
-            if completed {
-                let result = recognizer.final_result();
-                println!("Result: {:?}", result);
-            } else {
-                let result = recognizer.partial_result();
-                if result.partial != last_part {
-                    last_part.clear();
-                    last_part.insert_str(0, &result.partial);
-                    println!("Partial: {:?}", result.partial);
-                }
-            }
-        }
-    }
+#[derive(Debug, StructOpt)]
+#[structopt(
+    name = "vosk",
+    about = "Offline speech recognition tool. Uses VOSK library from https://github.com/alphacep"
+)]
+struct InputArgs {
+    #[structopt(short = "f", long = "file")]
+    /// Path to input audio file. Only mono WAV is supported at the moment
+    input_file: PathBuf,
+    #[structopt(short = "m", long = "model")]
+    /// Path to the model. Get one from https://alphacephei.com/vosk/models and unpack.
+    recognition_model: PathBuf,
+    #[structopt(short = "s", long = "speaker_model")]
+    /// Path to the speaker identification model. Available at https://alphacephei.com/vosk/models
+    speaker_model: Option<PathBuf>,
+    #[structopt(short = "o", long = "output")]
+    /// Path to the output file. Decoded text will be routed to stdout if path is not provided.
+    decoded_text: Option<PathBuf>,
 }
 
 fn read_sample(r: &mut WaveReader<BufReader<File>>, buf: &mut [i16]) -> usize {
@@ -77,4 +41,66 @@ fn read_sample(r: &mut WaveReader<BufReader<File>>, buf: &mut [i16]) -> usize {
         }
     }
     i
+}
+
+fn process_wav(
+    input_file: PathBuf,
+    recognition_model: PathBuf,
+    speaker_model: Option<PathBuf>,
+    decoded_text: Option<PathBuf>,
+) {
+    let input_file = File::open(&input_file).unwrap();
+
+    let reader = BufReader::new(input_file);
+    let mut wave_reader = WaveReader::new(reader).unwrap();
+    let fmt = &wave_reader.pcm_format;
+
+    let mut buf = [0; 1024];
+    let recognition_model = Model::new(recognition_model).unwrap();
+    if speaker_model.is_some() {
+        let speaker_model = SpeakerModel::new(speaker_model.unwrap()).unwrap();
+        let mut speaker_recognizer =
+            SpeakerRecognizer::new(&recognition_model, &speaker_model, fmt.sample_rate as f32);
+    }
+
+    let mut speech_recognizer = Recognizer::new(&recognition_model, fmt.sample_rate as f32);
+    let mut last_part = String::new();
+
+    loop {
+        let n = read_sample(&mut wave_reader, &mut buf);
+        if n == 0 {
+            let result = speech_recognizer.final_result();
+            println!("Final result: {}", result.text);
+            break;
+        } else {
+            let completed = speech_recognizer.accept_waveform(&buf[..n]);
+            if completed {
+                let result = speech_recognizer.final_result();
+                println!("Result: {}", result.text);
+            } else {
+                let result = speech_recognizer.partial_result();
+                if result.partial != last_part {
+                    last_part.clear();
+                    last_part.insert_str(0, &result.partial);
+                    println!("Partial: {}", result.partial);
+                }
+            }
+        }
+    }
+}
+
+fn main() {
+    let args = InputArgs::from_args();
+
+    let extension = args.input_file.extension().and_then(OsStr::to_str);
+    match extension {
+        Some("wav") => process_wav(
+            args.input_file,
+            args.recognition_model,
+            args.speaker_model,
+            args.decoded_text,
+        ),
+        Some(_) => eprintln!("Unsupported file type!"),
+        None => eprintln!("File has no extension!"),
+    }
 }

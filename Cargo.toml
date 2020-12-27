@@ -9,4 +9,4 @@ edition = "2018"
 [dependencies]
 vosk = { path = "./vosk-rs" }
 riff-wave = "0.1.2"
-argh = "0.1.4"
+structopt = "0.3.21"
