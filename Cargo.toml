@@ -1,0 +1,12 @@
+[package]
+name = "vosk"
+version = "0.1.0"
+authors = ["Egor Markov <emarkov@notanotherone.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+vosk = { path = "./vosk-rs" }
+riff-wave = "0.1.2"
+argh = "0.1.4"
