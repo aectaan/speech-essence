@@ -1,2 +1,3 @@
 # vosk
-Speech recognition app. Written in Rust
+Speech recognition app, written in Rust.
+Run INSTALL_PREREQUISITES.sh to install all dependencies.
