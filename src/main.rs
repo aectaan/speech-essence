@@ -1,20 +1,21 @@
 use riff_wave::WaveReader;
+use scan_dir::ScanDir;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
 use structopt::StructOpt;
-use vosk::{Model, Recognizer, SpeakerModel, SpeakerRecognizer};
+use vosk::{Error, Model, Recognizer, SpeakerModel, SpeakerRecognizer};
 
 #[derive(Debug, StructOpt)]
 #[structopt(
-    name = "vosk",
+    name = "speech essence",
     about = "Offline speech recognition tool. Uses VOSK library from https://github.com/alphacep"
 )]
 struct InputArgs {
     #[structopt(short = "f", long = "file")]
     /// Path to input audio file. Only mono WAV is supported at the moment
-    input_file: PathBuf,
+    inputs: PathBuf,
     #[structopt(short = "m", long = "model")]
     /// Path to the model. Get one from https://alphacephei.com/vosk/models and unpack.
     recognition_model: PathBuf,
@@ -45,8 +46,8 @@ fn read_sample(r: &mut WaveReader<BufReader<File>>, buf: &mut [i16]) -> usize {
 
 fn process_wav(
     input_file: PathBuf,
-    recognition_model: PathBuf,
-    speaker_model: Option<PathBuf>,
+    recognition_model: &PathBuf,
+    speaker_model: Option<&PathBuf>,
     decoded_text: Option<PathBuf>,
 ) {
     let input_file = File::open(&input_file).unwrap();
@@ -91,16 +92,31 @@ fn process_wav(
 
 fn main() {
     let args = InputArgs::from_args();
+    let mut files = Vec::new();
+    let recognition_model = args.recognition_model;
+    let speaker_model = args.speaker_model;
 
-    let extension = args.input_file.extension().and_then(OsStr::to_str);
-    match extension {
-        Some("wav") => process_wav(
-            args.input_file,
-            args.recognition_model,
-            args.speaker_model,
-            args.decoded_text,
-        ),
-        Some(_) => eprintln!("Unsupported file type!"),
-        None => eprintln!("File has no extension!"),
+    if args.inputs.is_dir() {
+        ScanDir::files()
+            .walk(args.inputs, |iter| {
+                for (entry, _name) in iter {
+                    files.push(entry.path());
+                }
+            })
+            .unwrap();
+    } else {
+        files.push(args.inputs);
+    }
+
+    for f in files {
+        let ext = f.extension().and_then(OsStr::to_str);
+        match ext {
+            Some("wav") => {
+                println!("processing file {}", f.to_str().unwrap());
+                process_wav(f, &recognition_model, speaker_model.as_ref(), None);
+            }
+            Some(_) => eprintln!("Unsupported file {}", f.to_str().unwrap()),
+            None => eprintln!("File has no extension {}", f.to_str().unwrap()),
+        }
     }
 }

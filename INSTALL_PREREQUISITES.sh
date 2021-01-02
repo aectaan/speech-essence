@@ -6,9 +6,6 @@ git submodule init
 git submodule update
 #First install dependencies and build the speech recognition toolkit Kaldi, which Vosk is based on
 sudo apt-get install g++ automake autoconf unzip wget curl sox gfortran libtool subversion python2.7 python3 zlib1g-dev
-#Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-rustup update stable
 #Build Kaldi
 cd kaldi/tools
 #Install linear algebra libraries, default - ATLAS

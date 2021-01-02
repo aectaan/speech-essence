@@ -10,3 +10,4 @@ edition = "2018"
 vosk = { path = "./vosk-rs" }
 riff-wave = "0.1.2"
 structopt = "0.3.21"
+scan_dir = "0.3.3"
