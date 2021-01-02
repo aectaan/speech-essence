@@ -1,5 +1,5 @@
 [package]
-name = "vosk"
+name = "speech-essence"
 version = "0.1.0"
 authors = ["Egor Markov <emarkov@notanotherone.com>"]
 edition = "2018"
