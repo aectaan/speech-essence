@@ -5,17 +5,17 @@
 sudo apt-get install g++ automake autoconf unzip wget curl sox gfortran libtool subversion python2.7 python3 zlib1g-dev
 #Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-#Get and build Kaldi
-git clone -b lookahead --single-branch https://github.com/alphacep/kaldi
+rustup update stable
+#Иuild Kaldi
 cd kaldi/tools
 make
 #Install linear algebra libraries (uncomment preferred one), default - ATLAS
 #Option 1: ATLAS installation
 sudo apt-get install libatlas-base-dev
 #Option 2: OpenBLAS installation
-#./extras/install_openblas.sh
+./extras/install_openblas.sh
 #Option 3: Intel-mkl installation
-#./extras/install_mkl.sh
+./extras/install_mkl.sh
 #Kaldi compilation
 cd ../src
 #Configure with mathlib set to the linear algebra library used:
@@ -25,13 +25,7 @@ make -j clean depend; make -j 4
 cd ..
 echo "export KALDI_ROOT=$(pwd)" >> $HOME/.bashrc
 source ~/.bashrc
-cd ..
-#Install vosk-sys
-git clone https://github.com/wzhd/vosk-sys.git
-cd vosk-sys
+cd ../vosk-sys
 git submodule init
 git submodule update
 cargo build
-#install vosk-rs
-cd ..
-git clone https://github.com/wzhd/vosk-rs.git

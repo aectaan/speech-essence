@@ -1,0 +1,10 @@
+[submodule "kaldi"]
+	path = kaldi
+	url = https://github.com/alphacep/kaldi
+	branch = lookahead
+[submodule "vosk-sys"]
+	path = vosk-sys
+	url = https://github.com/wzhd/vosk-sys.git
+[submodule "vosk-rs"]
+	path = vosk-rs
+	url = https://github.com/wzhd/vosk-rs.git
