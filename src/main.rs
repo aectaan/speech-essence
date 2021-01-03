@@ -83,7 +83,7 @@ fn process_wav(
                 if result.partial != last_part {
                     last_part.clear();
                     last_part.insert_str(0, &result.partial);
-                    println!("Partial: {}", result.partial);
+                    // println!("Partial: {}", result.partial);
                 }
             }
         }
@@ -107,6 +107,9 @@ fn main() {
     } else {
         files.push(args.inputs);
     }
+
+    files.sort();
+    println!("Processing files:\n{:#?}", files);
 
     for f in files {
         let ext = f.extension().and_then(OsStr::to_str);
