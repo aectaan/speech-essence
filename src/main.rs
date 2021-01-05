@@ -110,13 +110,13 @@ fn main() {
                 for (entry, name) in iter {
                     files.push((
                         entry.path(),
-                        String::from(entry.file_name().to_str().unwrap()),
+                        String::from(entry.path().file_stem().unwrap().to_str().unwrap()),
                     ));
                 }
             })
             .unwrap();
     } else {
-        let name = String::from(args.inputs.file_name().unwrap().to_str().unwrap());
+        let name = String::from(args.inputs.file_stem().unwrap().to_str().unwrap());
         files.push((args.inputs, name));
     }
 
