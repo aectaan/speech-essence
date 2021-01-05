@@ -1,11 +1,11 @@
 use riff_wave::WaveReader;
-use scan_dir::ScanDir;
+use scan_dir::{ScanDir, Walker};
 use std::ffi::OsStr;
-use std::fs::File;
-use std::io::BufReader;
-use std::path::PathBuf;
+use std::fs::{create_dir, create_dir_all, File};
+use std::io::{BufReader, Write};
+use std::path::{Path, PathBuf};
 use structopt::StructOpt;
-use vosk::{Error, Model, Recognizer, SpeakerModel, SpeakerRecognizer};
+use vosk::{Model, Recognizer, SpeakerModel, SpeakerRecognizer};
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -24,7 +24,7 @@ struct InputArgs {
     speaker_model: Option<PathBuf>,
     #[structopt(short = "o", long = "output")]
     /// Path to the output file. Decoded text will be routed to stdout if path is not provided.
-    decoded_text: Option<PathBuf>,
+    output_path: PathBuf,
 }
 
 fn read_sample(r: &mut WaveReader<BufReader<File>>, buf: &mut [i16]) -> usize {
@@ -45,12 +45,13 @@ fn read_sample(r: &mut WaveReader<BufReader<File>>, buf: &mut [i16]) -> usize {
 }
 
 fn process_wav(
-    input_file: PathBuf,
+    input_path: PathBuf,
     recognition_model: &PathBuf,
     speaker_model: Option<&PathBuf>,
-    decoded_text: Option<PathBuf>,
+    output_path: PathBuf,
 ) {
-    let input_file = File::open(&input_file).unwrap();
+    let input_file = File::open(&input_path).unwrap();
+    let mut text = File::create(output_path).unwrap();
 
     let reader = BufReader::new(input_file);
     let mut wave_reader = WaveReader::new(reader).unwrap();
@@ -71,13 +72,15 @@ fn process_wav(
         let n = read_sample(&mut wave_reader, &mut buf);
         if n == 0 {
             let result = speech_recognizer.final_result();
-            println!("Final result: {}", result.text);
+            writeln!(text, "{}", result.text).unwrap();
+            // println!("Final result: {}", result.text);
             break;
         } else {
             let completed = speech_recognizer.accept_waveform(&buf[..n]);
             if completed {
                 let result = speech_recognizer.final_result();
-                println!("Result: {}", result.text);
+                writeln!(text, "{}", result.text).unwrap();
+            // println!("Result: {}", result.text);
             } else {
                 let result = speech_recognizer.partial_result();
                 if result.partial != last_part {
@@ -91,35 +94,46 @@ fn process_wav(
 }
 
 fn main() {
-    let args = InputArgs::from_args();
+    let args: InputArgs = InputArgs::from_args();
     let mut files = Vec::new();
     let recognition_model = args.recognition_model;
     let speaker_model = args.speaker_model;
+    let output_path = args.output_path;
+
+    if !output_path.exists() {
+        create_dir_all(output_path.clone()).unwrap();
+    }
 
     if args.inputs.is_dir() {
         ScanDir::files()
             .walk(args.inputs, |iter| {
-                for (entry, _name) in iter {
-                    files.push(entry.path());
+                for (entry, name) in iter {
+                    files.push((
+                        entry.path(),
+                        String::from(entry.file_name().to_str().unwrap()),
+                    ));
                 }
             })
             .unwrap();
     } else {
-        files.push(args.inputs);
+        let name = String::from(args.inputs.file_name().unwrap().to_str().unwrap());
+        files.push((args.inputs, name));
     }
 
     files.sort();
     println!("Processing files:\n{:#?}", files);
 
     for f in files {
-        let ext = f.extension().and_then(OsStr::to_str);
+        let ext = f.0.extension().and_then(OsStr::to_str);
+        let mut filename = output_path.clone();
+        filename.push(f.1 + ".txt");
         match ext {
             Some("wav") => {
-                println!("processing file {}", f.to_str().unwrap());
-                process_wav(f, &recognition_model, speaker_model.as_ref(), None);
+                println!("processing file {}", f.0.to_str().unwrap());
+                process_wav(f.0, &recognition_model, speaker_model.as_ref(), filename);
             }
-            Some(_) => eprintln!("Unsupported file {}", f.to_str().unwrap()),
-            None => eprintln!("File has no extension {}", f.to_str().unwrap()),
+            Some(_) => eprintln!("Unsupported file {}", f.0.to_str().unwrap()),
+            None => eprintln!("File has no extension {}", f.0.to_str().unwrap()),
         }
     }
 }

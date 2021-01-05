@@ -15,12 +15,12 @@ sudo apt-get install libatlas-base-dev
 ./extras/install_openblas.sh
 #Option 3: Intel-mkl installation
 ./extras/install_mkl.sh
-make -j 4;
+make
 #Kaldi compilation
 cd ../src
 #Configure with mathlib set to the linear algebra library used:
-./configure --mathlib=ATLAS --shared --use-cuda=no
-make -j clean depend; make -j 4;
+./configure --mathlib=OPENBLAS --shared --use-cuda=no
+make -j clean depend; make
 #export path to kaldi root
 cd ..
 echo "export KALDI_ROOT=$(pwd)" >> $HOME/.bashrc
