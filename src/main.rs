@@ -39,7 +39,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if args.inputs.is_dir() {
         let walk_res = ScanDir::files().walk(args.inputs, |iter| {
-            for (entry, name) in iter {
+            for (entry, _name) in iter {
                 files.push((
                     entry.path(),
                     String::from(entry.path().file_stem().unwrap().to_str().unwrap()),
@@ -62,7 +62,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     for f in files {
         let ext = f.0.extension().and_then(OsStr::to_str);
         let mut filename = output_path.clone();
-        filename.push(f.1 + ".txt");
+        filename.push(f.1);
         match ext {
             Some("wav") => {
                 println!("processing file {}", f.0.to_str().unwrap());
