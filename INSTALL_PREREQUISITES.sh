@@ -5,7 +5,7 @@
 git submodule init
 git submodule update --recursive
 #First install dependencies and build the speech recognition toolkit Kaldi, which Vosk is based on
-sudo apt-get install g++ automake autoconf unzip wget curl sox gfortran libtool subversion python python3 zlib1g-dev
+sudo apt-get install g++ automake autoconf unzip wget curl sox gfortran libtool subversion python python3 zlib1g-dev libssl-dev libogg-dev libopusfile-dev
 #Get and build Kaldi
 cd kaldi/tools
 #Install linear algebra libraries, default - ATLAS
@@ -15,12 +15,12 @@ sudo apt-get install libatlas-base-dev
 ./extras/install_openblas.sh
 #Option 3: Intel-mkl installation
 ./extras/install_mkl.sh
-make
+make -j 4
 #Kaldi compilation
 cd ../src
 #Configure with mathlib set to the linear algebra library used:
 ./configure --mathlib=OPENBLAS --shared --use-cuda=no
-make -j clean depend; make
+make -j clean depend; make -j 4
 #export path to kaldi root
 cd ..
 echo "export KALDI_ROOT=$(pwd)" >> $HOME/.bashrc
