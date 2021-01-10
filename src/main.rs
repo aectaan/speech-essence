@@ -1,5 +1,6 @@
-mod wav_stt;
 mod mp3_stt;
+mod opus_stt;
+mod wav_stt;
 
 use scan_dir::ScanDir;
 use std::error::Error;
