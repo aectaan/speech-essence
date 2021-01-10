@@ -11,3 +11,4 @@ vosk = { path = "./vosk-rs" }
 structopt = "0.3.21"
 scan_dir = "0.3.3"
 hound = "3.4.0"
+minimp3 = "0.5.1"

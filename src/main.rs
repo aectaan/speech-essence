@@ -1,4 +1,5 @@
 mod wav_stt;
+mod mp3_stt;
 
 use scan_dir::ScanDir;
 use std::error::Error;
@@ -67,6 +68,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             Some("wav") => {
                 println!("processing file {}", f.0.to_str().unwrap());
                 wav_stt::process(f.0, &recognition_model, speaker_model.as_ref(), filename)?;
+            }
+            Some("mp3") => {
+                println!("processing file {}", f.0.to_str().unwrap());
+                mp3_stt::process(f.0, &recognition_model, speaker_model.as_ref(), filename)?;
             }
             Some(_) => eprintln!("Unsupported file {}", f.0.to_str().unwrap()),
             None => eprintln!("File has no extension {}", f.0.to_str().unwrap()),
