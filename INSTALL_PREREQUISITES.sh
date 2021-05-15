@@ -19,8 +19,8 @@ make
 #Kaldi compilation
 cd ../src
 #Configure with mathlib set to the linear algebra library used:
-./configure --mathlib=OPENBLAS --shared --use-cuda=no
-make -j clean depend; make
+./configure --mathlib=MKL --shared --use-cuda=no
+make -j clean depend; make -j4
 #export path to kaldi root
 cd ..
 echo "export KALDI_ROOT=$(pwd)" >> $HOME/.bashrc
